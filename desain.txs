@@ -1,0 +1,32 @@
+tipe data
+str
+int 
+float
+bool
+char
+complex
+const
+
+deklarasi
+tipe data a = 4;
+a = 4;
+
+print();
+use as
+func() {}
+if statement {}
+elif statement {}
+else {}
+for statement {}
+while statement {}
+do {} while statement;
+switch case
+break;
+continue;
+try {}
+catch() {}
+class {}
+
+use web as w
+div = group
+h() {"w.p{"}"}
