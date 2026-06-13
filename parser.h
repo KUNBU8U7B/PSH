@@ -58,6 +58,31 @@ class PARSER {
         return true;
     }
 
+    void cetak_mentah(std::string_view data_cetak) {
+        for (std::size_t count_char = 0 ; count_char < data_cetak.size(); count_char++) {
+            if (data_cetak[count_char] == '\\' && count_char + 1 < data_cetak.size()) {
+                count_char++;
+                switch (data_cetak[count_char]) {
+                    case 'n':  std::cout << '\n'; break;
+                    case 't':  std::cout << '\t'; break;
+                    case '\\': std::cout << '\\'; break;
+                    case '"':  std::cout << '"';  break;
+                    case '\'': std::cout << '\''; break;
+                    case 'r':  std::cout << '\r'; break;
+                    case 'a':  std::cout << '\a'; break;
+                    case '0':  std::cout << '\0'; break;
+                    case 'b':  std::cout << '\b'; break;
+                    case 'f':  std::cout << '\f'; break;
+                    case 'v':  std::cout << '\v'; break;
+
+                    default:   std::cout << '\\' << data_cetak[count_char]; break;
+                }
+            } else {
+                std::cout << data_cetak[count_char];
+            }
+        }
+    }
+
     public:
     PARSER(std::vector<Token> data) {
         tokens = data;
@@ -82,7 +107,7 @@ class PARSER {
         for (std::size_t i = 0; i < antrian_perintah.size();i++ ) {
             if (antrian_perintah[i].tipe == JenisEsekusi::PRINT) {
                 for (std::size_t j = 0; j < antrian_perintah[i].data.size(); j++ ) {
-                    std::cout << antrian_perintah[i].data[j];
+                    cetak_mentah(antrian_perintah[i].data[j]);
                 }
                 std::cout << std::endl;
             }

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <iterator>
 
 enum class Tokentype {
     PLUS,MINUS,MUL,DIV,LPAREN,RPAREN,SEMICOLON,COLON,LBRACE,RBRACE,ASSIGN,COMMA,

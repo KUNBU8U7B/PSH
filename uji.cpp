@@ -101,8 +101,11 @@ int uji_parser() {
     LEXER lexer(input);
     std::vector<Token> tokens = lexer.tokenise();
     PARSER parser(tokens);
-    parser.scan_code();
-    parser.execute();
+    if (!parser.scan_code()) {
+        std::cout << std::endl;
+    } else {
+        parser.execute();
+    }
     return 0;
 }
 

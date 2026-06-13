@@ -2,27 +2,11 @@
 #define LEXER_H
 
 #include "material.h"
-#include <cstddef>
-#include <iterator>
-#include <string_view>
 
 class LEXER {
     private:
-    std::string data;
+    std::string_view data;
     std::size_t posisi = 0 , baris = 1 , kata_ke = 0 ;
-
-    char baca_escape() {
-        char c = data[posisi];
-        posisi++;
-        switch (c) {
-            case 'n': return '\n'; break;
-            case 't': return '\t'; break;
-            case '\'': return '\''; break;
-            case '\"': return '\"'; break;
-            case '\\': return '\\'; break;
-        }
-        return c;
-    }
 
     public: 
 
@@ -117,7 +101,7 @@ class LEXER {
                 kata_ke++;
                 std::size_t start_token = posisi;
                 posisi++; // untuk melewati tanda '"'
-                std::size_t write_pos = posisi, start_konten = posisi;
+                std::size_t start_konten = posisi;
                 bool ditutup = false;
 
                 while (posisi < data.size()) {
@@ -126,22 +110,19 @@ class LEXER {
                         break;
                     } else if (data[posisi] == '\\') {
                         posisi++;
-                        if (posisi < data.size()) {
-                            data[write_pos++] = baca_escape();
-                        }
+                        if (posisi < data.size()) {posisi++;}
                     } else {
                         if (data[posisi] == '\n') baris++;
-                        data[write_pos++] = data[posisi++];
+                        posisi++;
                     }
                 }
                 if (!ditutup) {
                     std::string_view str_error(&data[start_token],posisi - start_token );
                     tokens.push_back({Tokentype::UNKNOWN,str_error,baris,kata_ke});
-                    //if (posisi < data.size()) {posisi++;}
                 } else {
-                    std::string_view str(&data[start_konten],write_pos - start_konten);
+                    std::string_view str(&data[start_konten],posisi - start_konten);
                     tokens.push_back({Tokentype::STR,str,baris,kata_ke});
-                    if (posisi < data.size()) posisi++;
+                    posisi++;
                 }
                 break;
                 }
@@ -150,31 +131,24 @@ class LEXER {
                 kata_ke++;
                 std::size_t start_token = posisi;
                 posisi++;
-                std::size_t write_pos = posisi, start_konten = posisi;
+                std::size_t start_konten = posisi;
 
                 if (posisi < data.size() && data[posisi] == '\\') {
                     posisi++;
-                    if (posisi < data.size()) {
-                        data[write_pos++] = baca_escape();
-                    }
+                    if (posisi < data.size()) {posisi++;}
                 } else if (posisi < data.size() && data[posisi] != '\'') {
-                    data[write_pos++] = data[posisi++];
+                    posisi++;
                 }
 
                 if (posisi < data.size() && data[posisi] == '\'') {
-                posisi++;
-                if (write_pos - start_konten == 1) {
-                    std::string_view char_psh(&data[start_konten],1);
-                    tokens.push_back({Tokentype::CHAR,char_psh,baris,kata_ke});
+                    std::string_view char_psh(&data[start_konten], posisi - start_konten);
+                    tokens.push_back({Tokentype::CHAR, char_psh, baris, kata_ke});
+                    posisi++; // Lewati tanda '\'' penutup
                 } else {
-                    std::string_view err_char(&data[start_token],posisi - start_token);
-                    tokens.push_back({Tokentype::UNKNOWN,err_char,baris,kata_ke});
-                }
-                } else {
-                while (posisi < data.size() && data[posisi] != '\'' && data[posisi] != '\n') { posisi++; }
-                if (posisi < data.size() && data[posisi] == '\'') posisi++;
-                std::string_view view_error(&data[start_token], posisi - start_token);
-                tokens.push_back({Tokentype::UNKNOWN, view_error, baris, kata_ke});
+                    while (posisi < data.size() && data[posisi] != '\'' && data[posisi] != '\n') { posisi++; }
+                    if (posisi < data.size() && data[posisi] == '\'') posisi++;
+                    std::string_view view_error(&data[start_token], posisi - start_token);
+                    tokens.push_back({Tokentype::UNKNOWN, view_error, baris, kata_ke});
                 }
                 break;
                 }
