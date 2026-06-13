@@ -2,11 +2,27 @@
 #define LEXER_H
 
 #include "material.h"
+#include <cstddef>
+#include <iterator>
+#include <string_view>
 
 class LEXER {
     private:
-    std::string_view data;
+    std::string data;
     std::size_t posisi = 0 , baris = 1 , kata_ke = 0 ;
+
+    char baca_escape() {
+        char c = data[posisi];
+        posisi++;
+        switch (c) {
+            case 'n': return '\n'; break;
+            case 't': return '\t'; break;
+            case '\'': return '\''; break;
+            case '\"': return '\"'; break;
+            case '\\': return '\\'; break;
+        }
+        return c;
+    }
 
     public: 
 
@@ -27,102 +43,140 @@ class LEXER {
             switch (current) {
                 case '+':
                 kata_ke++;
-                tokens.push_back({Tokentype::PLUS,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::PLUS,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '-':
                 kata_ke++;
-                tokens.push_back({Tokentype::MINUS,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::MINUS,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break; 
                 
                 case '*':
                 kata_ke++;
-                tokens.push_back({Tokentype::MUL,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::MUL,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '/':
                 kata_ke++;
-                tokens.push_back({Tokentype::DIV,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::DIV,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '(':
                 kata_ke++;
-                tokens.push_back({Tokentype::LPAREN,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::LPAREN,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case ')':
                 kata_ke++;
-                tokens.push_back({Tokentype::RPAREN,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::RPAREN,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case ';':
                 kata_ke++;
-                tokens.push_back({Tokentype::SEMICOLON,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::SEMICOLON,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case ':': 
                 kata_ke++;
-                tokens.push_back({Tokentype::COLON,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::COLON,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '{':
                 kata_ke++;
-                tokens.push_back({Tokentype::LBRACE,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::LBRACE,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '}':
                 kata_ke++;
-                tokens.push_back({Tokentype::RBRACE,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::RBRACE,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '=':
                 kata_ke++;
-                tokens.push_back({Tokentype::ASSIGN,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::ASSIGN,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case ',':
                 kata_ke++;
-                tokens.push_back({Tokentype::COMMA,data.substr(posisi,1),baris,kata_ke});
+                tokens.push_back({Tokentype::COMMA,std::string_view(&data[posisi],1),baris,kata_ke});
                 posisi++;
                 break;
 
                 case '"': {
                 kata_ke++;
-                posisi++;
-                std::size_t start = posisi;
-                while (posisi < data.size() && data[posisi] != '"') {
-                    posisi++;
+                std::size_t start_token = posisi;
+                posisi++; // untuk melewati tanda '"'
+                std::size_t write_pos = posisi, start_konten = posisi;
+                bool ditutup = false;
+
+                while (posisi < data.size()) {
+                    if (data[posisi] == '\"') {
+                        ditutup = true;
+                        break;
+                    } else if (data[posisi] == '\\') {
+                        posisi++;
+                        if (posisi < data.size()) {
+                            data[write_pos++] = baca_escape();
+                        }
+                    } else {
+                        if (data[posisi] == '\n') baris++;
+                        data[write_pos++] = data[posisi++];
+                    }
                 }
-                if (posisi >= data.size()) {
-                    tokens.push_back({Tokentype::UNKNOWN,data.substr(start - 1, posisi - (start - 1)),baris,kata_ke});
+                if (!ditutup) {
+                    std::string_view str_error(&data[start_token],posisi - start_token );
+                    tokens.push_back({Tokentype::UNKNOWN,str_error,baris,kata_ke});
+                    //if (posisi < data.size()) {posisi++;}
                 } else {
-                    tokens.push_back({Tokentype::STR,data.substr(start, posisi - start),baris,kata_ke});
+                    std::string_view str(&data[start_konten],write_pos - start_konten);
+                    tokens.push_back({Tokentype::STR,str,baris,kata_ke});
+                    if (posisi < data.size()) posisi++;
                 }
-                if (posisi < data.size()) posisi++;
                 break;
                 }
 
-                case '\'':
+                case '\'': {
                 kata_ke++;
-                if (posisi + 2 < data.size() && data[posisi + 2] == '\'') {
-                    tokens.push_back({Tokentype::CHAR,data.substr(posisi + 1, 1),baris,kata_ke});
-                    posisi += 3;
-                    break;
-                } else {
-                    tokens.push_back({Tokentype::UNKNOWN,data.substr(posisi,1),baris,kata_ke});
+                std::size_t start_token = posisi;
+                posisi++;
+                std::size_t write_pos = posisi, start_konten = posisi;
+
+                if (posisi < data.size() && data[posisi] == '\\') {
                     posisi++;
-                    break;
+                    if (posisi < data.size()) {
+                        data[write_pos++] = baca_escape();
+                    }
+                } else if (posisi < data.size() && data[posisi] != '\'') {
+                    data[write_pos++] = data[posisi++];
+                }
+
+                if (posisi < data.size() && data[posisi] == '\'') {
+                posisi++;
+                if (write_pos - start_konten == 1) {
+                    std::string_view char_psh(&data[start_konten],1);
+                    tokens.push_back({Tokentype::CHAR,char_psh,baris,kata_ke});
+                } else {
+                    std::string_view err_char(&data[start_token],posisi - start_token);
+                    tokens.push_back({Tokentype::UNKNOWN,err_char,baris,kata_ke});
+                }
+                } else {
+                while (posisi < data.size() && data[posisi] != '\'' && data[posisi] != '\n') { posisi++; }
+                if (posisi < data.size() && data[posisi] == '\'') posisi++;
+                std::string_view view_error(&data[start_token], posisi - start_token);
+                tokens.push_back({Tokentype::UNKNOWN, view_error, baris, kata_ke});
+                }
+                break;
                 }
 
                 default:
@@ -152,12 +206,12 @@ class LEXER {
                         while (posisi < data.size() && (std::isalnum(static_cast<unsigned char>(data[posisi])) || data[posisi] == '_')) {
                             posisi++;
                         }
-                        std::string_view tempat_sementara = data.substr(start,posisi - start);
+                        std::string_view tempat_sementara(&data[start],posisi - start);
                         tokens.push_back({Tokentype::UNKNOWN,tempat_sementara,baris,kata_ke});
                         break;
                     }
 
-                    std::string_view tempat_sementara = data.substr(start,posisi - start);
+                    std::string_view tempat_sementara(&data[start],posisi - start);
                     if (titik == 0) {
                         tokens.push_back({Tokentype::INT,tempat_sementara,baris,kata_ke});
                     } else if (titik == 1) {
@@ -175,7 +229,7 @@ class LEXER {
                     kata_ke++;
                     std::size_t start = posisi;
                     while (posisi < data.size() && (std::isalnum(static_cast<unsigned char>(data[posisi])) || data[posisi] == '_')) { posisi++; }
-                    std::string_view kata = data.substr(start,posisi - start);
+                    std::string_view kata(&data[start],posisi - start);
                     Tokentype tipe_kata = Tokentype::UNKNOWN;
                     bool ketemu_kata = false;
 
@@ -194,7 +248,7 @@ class LEXER {
                     
                 } else {
                     kata_ke++;
-                    tokens.push_back({Tokentype::UNKNOWN,data.substr(posisi,1),baris,kata_ke});
+                    tokens.push_back({Tokentype::UNKNOWN,std::string_view(&data[posisi],1),baris,kata_ke});
                     posisi++;
                     break;
                 }

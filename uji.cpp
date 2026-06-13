@@ -96,8 +96,7 @@ int uji_lexer() {
 }
 
 int uji_parser() {
-    std::string input = R"(
-    print("Hello, World!,\n this is a test of the PSH parser.", 123, 45.67, true, false, 'A');
+    std::string input = R"(print("Hello, World!,\n this is a test of the PSH parser.", 123, 45.67, true, false, 'A');
     )";
     LEXER lexer(input);
     std::vector<Token> tokens = lexer.tokenise();
