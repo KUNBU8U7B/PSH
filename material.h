@@ -11,6 +11,9 @@
 #include <iterator>
 #include <fstream>
 #include <sstream>
+#include <variant>
+
+using Value = std::variant<long long,double,char,bool,std::string>;
 
 enum class Tokentype {
     PLUS,MINUS,MUL,DIV,LPAREN,RPAREN,SEMICOLON,COLON,LBRACE,RBRACE,ASSIGN,COMMA,
@@ -36,7 +39,7 @@ struct kamus {
 
 struct perintah {
     JenisEsekusi tipe;
-    std::vector<std::string_view> data;
+    std::vector<Value> data;
 };
 
 const kamus kamus_syntax[] = {

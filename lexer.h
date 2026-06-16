@@ -157,6 +157,7 @@ class LEXER {
                 if (std::isspace(static_cast<unsigned char>(current))) {
                     if (current == '\n') {
                         baris++;
+                        kata_ke = 0;
                     }
                     posisi++;
                     break;

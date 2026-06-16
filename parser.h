@@ -2,6 +2,9 @@
 #define PARSER_H
 
 #include "material.h"
+#include <stdexcept>
+#include <string>
+#include <variant>
 
 class PARSER {
     private:
@@ -32,18 +35,56 @@ class PARSER {
             std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Setelah print wajib ada '(' !" << std::endl;
             return false;
         }
-        std::vector<std::string_view> data_print;
-        while (true) {
-            Token konten = saat_ini();
-            if (konten.tipe == Tokentype::STR || konten.tipe == Tokentype::INT || konten.tipe == Tokentype::FLOAT || konten.tipe == Tokentype::CHAR || konten.tipe == Tokentype::BOOL ) {
-                data_print.push_back(konten.nilai);
-                maju();
-            } else {
-                std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Data yang ingin ditampilkan tidak valid !" << std::endl;
-                return false;
-            }
+        std::vector<Value> data_print;
+        if (saat_ini().tipe != Tokentype::RPAREN) {
+            while (true) {
+                Token konten = saat_ini();
+                if (konten.tipe == Tokentype::STR ){
+                    data_print.push_back(std::string(konten.nilai));
+                    maju();
+                } else if (konten.tipe == Tokentype::FLOAT) {
+                    data_print.push_back(std::stod(std::string(konten.nilai)));
+                    maju();
+                } else if (konten.tipe == Tokentype::INT) {
+                    try {
+                        data_print.push_back(std::stoll(std::string(konten.nilai)));
+                    } catch (const std::out_of_range& e) {
+                        std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Angka bulat terlalu Besar! Melampaui batas maksimal sistem." << std::endl;
+                        return false;
 
-            if (temukan(Tokentype::COMMA)) { continue; } else { break; }
+                    }
+                    maju();
+                } else if (konten.tipe == Tokentype::CHAR) {
+                    if (konten.nilai[0] == '\\' && konten.nilai.size() > 1) {
+                        char escape_char = konten.nilai[1];
+                        switch (escape_char) {
+                            case 'n':  data_print.push_back('\n'); break;
+                            case 't':  data_print.push_back('\t'); break;
+                            case '\\': data_print.push_back('\\'); break;
+                            case '"':  data_print.push_back('\"'); break;
+                            case '\'': data_print.push_back('\''); break;
+                            case 'r':  data_print.push_back('\r'); break;
+                            case 'a':  data_print.push_back('\a'); break;
+                            case '0':  data_print.push_back('\0'); break;
+                            case 'b':  data_print.push_back('\b'); break;
+                            case 'f':  data_print.push_back('\f'); break;
+                            case 'v':  data_print.push_back('\v'); break;
+                            default:   data_print.push_back(escape_char); break;
+                        }
+                    } else {
+                        data_print.push_back(konten.nilai[0]);
+                    }
+                    maju();
+                } else if (konten.tipe == Tokentype::BOOL) {
+                    data_print.push_back(konten.nilai == "true");
+                    maju();
+                } else {
+                    std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Data yang ingin ditampilkan tidak valid !" << std::endl;
+                    return false;
+                }
+
+                if (temukan(Tokentype::COMMA)) { continue; } else { break; }
+            }
         }
         if (!temukan(Tokentype::RPAREN)) {
             std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Setelah data yang ingin di tampilkan wajib ada ')' !" << std::endl;
@@ -83,6 +124,20 @@ class PARSER {
         }
     }
 
+    void cetak_nilai(const Value& val) {
+        if (std::holds_alternative<std::string>(val)) {
+            cetak_mentah(std::get<std::string>(val));
+        } else if (std::holds_alternative<long long>(val)) {
+            std::cout << std::get<long long>(val);
+        } else if (std::holds_alternative<double>(val)) {
+            std::cout << std::get<double>(val);
+        } else if (std::holds_alternative<char>(val)) {
+            std::cout << std::get<char>(val);
+        } else if (std::holds_alternative<bool>(val)) {
+            std::cout << (std::get<bool>(val) ? "true" : "false");
+        }
+    }
+
     public:
     PARSER(std::vector<Token> data) {
         tokens = data;
@@ -107,7 +162,7 @@ class PARSER {
         for (std::size_t i = 0; i < antrian_perintah.size();i++ ) {
             if (antrian_perintah[i].tipe == JenisEsekusi::PRINT) {
                 for (std::size_t j = 0; j < antrian_perintah[i].data.size(); j++ ) {
-                    cetak_mentah(antrian_perintah[i].data[j]);
+                    cetak_nilai(antrian_perintah[i].data[j]);
                 }
                 std::cout << std::endl;
             }
