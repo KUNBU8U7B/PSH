@@ -4,7 +4,7 @@ melalui system static type yang memungkinkan anda untuk berkolaborasi dalam team
 dengan bantuan binding ke C++, anda bisa memasukkan library C++ kedalam code PSH agar menunjang produktifitas anda.
 
 ## Problem Solving
-bahasa ini menyelesaikan masalah dari kemudahan python dan kekakuan C.
+bahasa ini menyelesaikan masalah dari kemudahan python yang menjebak dan kekakuan C yang sulit di maintence.
 dengan menggunakan combinasi kedua nya, bahasa ini memungkinkan anda untuk menulis code lebih rapi dan tidak kaku seperti C.
 
 ## Contoh code
