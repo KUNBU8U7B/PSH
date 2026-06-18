@@ -19,5 +19,5 @@ bool c = true;
 
 ### I/O
 ```
-print("Hello, World!")
+print("Hello, World!");
 ```
