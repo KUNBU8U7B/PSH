@@ -1,5 +1,5 @@
 ## PSH Language
-sebuah bahasa yang dikembangkan oleh KUNBU8U7B dengan menggunakan bahasa C++. bahasa ini adalah bahasa yang menggabungkan antara kemudahan dari bahasa Python dan aturan keamanan C.
+sebuah bahasa yang dikembangkan oleh KUNBU8U7B dan Pypix-c13 dengan menggunakan bahasa C++. bahasa ini adalah bahasa yang menggabungkan antara kemudahan dari bahasa Python dan aturan keamanan C.
 melalui system static type yang memungkinkan anda untuk berkolaborasi dalam team tanpa membuat code anda menjadi "spageti code".
 dengan bantuan binding ke C++, anda bisa memasukkan library C++ kedalam code PSH agar menunjang produktifitas anda.
 
