@@ -109,8 +109,19 @@ int uji_parser() {
     return 0;
 }
 
+#define INT_LIMIT 0xFFFFFFFF
+
+#include <iostream>
+
+using namespace std;
+
+void convertHex() {
+    unsigned int val = INT_LIMIT;
+    cout << "Decimal: " << val;
+}
+
 int main() {
     //uji_lexer();
-    uji_parser();
+    convertHex();
     return 0;
 }

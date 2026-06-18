@@ -2,23 +2,25 @@
 #define PARSER_H
 
 #include "material.h"
-#include <stdexcept>
-#include <string>
-#include <variant>
 
 class PARSER {
     private:
     std::vector<Token> tokens;
     std::size_t posisi = 0;
     std::vector<perintah> antrian_perintah;
+    std::map<std::string,VAR> tabel_var;
 
-    Token saat_ini() {
+    const Token& saat_ini() {
         if (posisi < tokens.size()) {
             return tokens[posisi];
         } else if (tokens.empty()) {
-            return {Tokentype::END_OF_FILE,"",1,0};
+            static const Token eof_token = {Tokentype::END_OF_FILE,"",1,0};
+            return eof_token;
         }
-        return {Tokentype::END_OF_FILE,"",tokens.back().baris,tokens.back().kata_ke};
+        static Token eof_token = {Tokentype::END_OF_FILE,"",0,0};
+        eof_token.baris = tokens.back().baris;
+        eof_token.kata_ke = tokens.back().kata_ke;
+        return eof_token;
     }
 
     void maju() {
@@ -78,7 +80,15 @@ class PARSER {
                 } else if (konten.tipe == Tokentype::BOOL) {
                     data_print.push_back(konten.nilai == "true");
                     maju();
-                } else {
+                } else if (konten.tipe == Tokentype::IDENTIFIER) {
+                    std::string nama_var(konten.nilai);
+                    if (tabel_var.find(nama_var) == tabel_var.end()) {
+                        std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Variabel " << nama_var << " tidak ditemukan sama sekali !" << std::endl;
+                        return false;
+                    }
+                    data_print.push_back(tabel_var[nama_var].nilai);
+                    maju();
+                }else {
                     std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Data yang ingin ditampilkan tidak valid !" << std::endl;
                     return false;
                 }
@@ -96,6 +106,74 @@ class PARSER {
         }
 
         antrian_perintah.push_back({JenisEsekusi::PRINT,data_print});
+        return true;
+    }
+
+    bool parser_dek_var_static() {
+        Tokentype tipe_data_var = saat_ini().tipe;
+        maju();
+
+        if (saat_ini().tipe != Tokentype::IDENTIFIER) {
+            std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : setelah tipe dari data sebuah variabel harus ada nama variabel !" << std::endl;
+            return false;
+        }
+        std::string nama_var(saat_ini().nilai);
+        maju();
+
+        if (!temukan(Tokentype::ASSIGN)) {
+            std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : setelah nama variabel di harapkan isi tanda = !" << std::endl;
+            return false;
+        }
+        Value nilai_var;
+        Token token_nilai = saat_ini();
+        Tokentype tipe_nilai;
+        if      (tipe_data_var == Tokentype::TYPE_STR)   { tipe_nilai = Tokentype::STR;     }
+        else if (tipe_data_var == Tokentype::TYPE_INT)   { tipe_nilai = Tokentype::INT;     }
+        else if (tipe_data_var == Tokentype::TYPE_FLOAT) { tipe_nilai = Tokentype::FLOAT;   }
+        else if (tipe_data_var == Tokentype::TYPE_BOOL)  { tipe_nilai = Tokentype::BOOL;    }
+        else if (tipe_data_var == Tokentype::TYPE_CHAR)  { tipe_nilai = Tokentype::CHAR;    }
+        else                                             { tipe_nilai = Tokentype::UNKNOWN; }
+
+        if (token_nilai.tipe != tipe_nilai) {
+            std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Tipe data tidak cocok dengan nilai variabel !" << std::endl;
+            return false;
+        }
+
+        if (tipe_nilai == Tokentype::STR)          {
+            nilai_var = std::string(token_nilai.nilai);
+        } else if (tipe_nilai == Tokentype::INT)   {
+            nilai_var = std::stoll(std::string(token_nilai.nilai));
+        } else if (tipe_nilai == Tokentype::FLOAT) {
+            nilai_var = std::stod(std::string( token_nilai.nilai));
+        } else if (tipe_nilai == Tokentype::BOOL)  {
+            nilai_var = (token_nilai.nilai == "true");
+        } else if (tipe_nilai == Tokentype::CHAR)  {
+            if (token_nilai.nilai[0] == '\\' && token_nilai.nilai.size() > 1) {
+                char escape_char = token_nilai.nilai[1];
+                switch (escape_char) {
+                    case 'n': nilai_var = '\n'; break;
+                    case 't': nilai_var = '\t'; break;
+                    case '\\':nilai_var = '\\'; break;
+                    case '\'':nilai_var = '\''; break;
+                    case '"': nilai_var = '\"'; break;
+                    case 'r': nilai_var = '\r'; break;
+                    case 'a': nilai_var = '\a'; break;
+                    case '0': nilai_var = '\0'; break;
+                    case 'b': nilai_var = '\b'; break;
+                    case 'f': nilai_var = '\f'; break;
+                    case 'v': nilai_var = '\v'; break;
+                    default:  nilai_var = escape_char; break;
+                }
+            } else {
+                nilai_var = token_nilai.nilai[0];
+            }
+        }
+        maju();
+        if (!temukan(Tokentype::SEMICOLON)) {
+            std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Setelah perintah berakhir wajib ada ';' !" << std::endl;
+            return false;
+        }
+        tabel_var[nama_var] = {tipe_nilai,nilai_var};
         return true;
     }
 
@@ -150,7 +228,11 @@ class PARSER {
                 if (!parser_print()) {
                     return false;
                 }
-            } else {
+            } else if (saat_ini().tipe == Tokentype::TYPE_INT || saat_ini().tipe == Tokentype::TYPE_STR || saat_ini().tipe == Tokentype::TYPE_FLOAT || saat_ini().tipe == Tokentype::TYPE_CHAR || saat_ini().tipe == Tokentype::TYPE_BOOL ) {
+                if (!parser_dek_var_static()) {
+                    return false;
+                }
+            }else {
                 std::cout << "ERROR : [ line : " << saat_ini().baris << " Kata ke : " << saat_ini().kata_ke << " ] : Perintah tidak di kenali oleh sistem !" << std::endl;
                 return false;
             }

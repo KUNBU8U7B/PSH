@@ -12,6 +12,8 @@
 #include <fstream>
 #include <sstream>
 #include <variant>
+#include <stdexcept>
+#include <map>
 
 using Value = std::variant<long long,double,char,bool,std::string>;
 
@@ -40,6 +42,11 @@ struct kamus {
 struct perintah {
     JenisEsekusi tipe;
     std::vector<Value> data;
+};
+
+struct VAR {
+    Tokentype tipe;
+    Value nilai;
 };
 
 const kamus kamus_syntax[] = {
